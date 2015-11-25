@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package type="module">
+
+    <!-- UID of package. -->
+    <uid>mod.verone.user</uid>
+    <!-- Package name. -->
+    <name>User</name>
+    <!-- Package version. -->
+    <version>0.1.0</version>
+    <!-- Package release date. -->
+    <relase-date>2015.11.10</relase-date>
+    <!-- Package license. -->
+    <license>GPLv3</license>
+    <!-- Author details. -->
+    <author>
+        <name>Adam Banaszkiewicz</name>
+        <url>http://www.veronecrm.com</url>
+    </author>
+
+    <!-- Database queries list -->
+    <db-query type="file" scenario="install">Module/Resources/Install/sql/install-user_auth_log.sql</db-query>
+    <db-query type="file" scenario="install">Module/Resources/Install/sql/install-user_group.sql</db-query>
+    <db-query type="file" scenario="install">Module/Resources/Install/sql/install-user_group-data.sql</db-query>
+    <db-query type="file" scenario="install">Module/Resources/Install/sql/install-permission.sql</db-query>
+    <db-query type="file" scenario="uninstall">Resources/Uninstall/sql/uninstall.sql</db-query>
+
+</package>

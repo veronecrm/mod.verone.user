@@ -2,14 +2,16 @@
 /**
  * Verone CRM | http://www.veronecrm.com
  *
- * @copyright  Copyright (C) 2015 Adam Banaszkiewicz
+ * @copyright  Copyright (C) 2015 - 2016 Adam Banaszkiewicz
  * @license    GNU General Public License version 3; see license.txt
  */
 
 namespace App\Module\User\Controller;
 
+use Identicon\Identicon;
 use CRM\App\Controller\BaseController;
 use CRM\Pagination\Paginator;
+use App\Module\User\ORM\User as UserEntity;
 
 /**
  * @section mod.User.User
@@ -69,6 +71,12 @@ class User extends BaseController
         $user = $this->entity()->fillFromRequest($request);
         $user->setPassword($request->request->get('password'));
 
+        /**
+         * Save two times, 'couse we need user ID to create his avatar
+         * as Identicon.
+         */
+        $this->repo()->save($user);
+        $this->fillWithGeneratedAvatar($user);
         $this->repo()->save($user);
 
         $this->eventDispatcher()->dispatch('onUserAdd', [$user]);
@@ -149,12 +157,14 @@ class User extends BaseController
             return $this->redirect('User', 'User', 'index');
         }
 
+        $editActionName = $request->query->get('act') == 'updateSelf' ? 'selfEdit' : 'edit';
+
         foreach([ 'username' => 'userUsernameExists', 'email' => 'userEmailExists' ] as $column => $message)
         {
             if($this->repo()->findAll("$column = :$column AND id != :id", [":$column" => $request->get($column), ':id' => $user->getId()]))
             {
                 $this->flash('warning', $this->t($message));
-                return $this->redirect('User', 'User', 'edit', [ 'id' => $user->getId() ]);
+                return $this->redirect('User', 'User', $editActionName, [ 'id' => $user->getId() ]);
             }
         }
 
@@ -162,6 +172,23 @@ class User extends BaseController
         $request->request->remove('password');
 
         $user->fillFromRequest($request);
+
+        if($request->request->get('avatarChangeActive') == 1)
+        {
+            if($request->request->get('avatarSource') == 1)
+            {
+                $this->fillWithGeneratedAvatar($user);
+            }
+            if($request->request->get('avatarSource') == 2)
+            {
+                $this->fillWithUploadedAvatarImage($user, 'avatarImage');
+            }
+            if($request->request->get('avatarSource') == 3)
+            {
+                $this->deleteAvatar($user);
+                $user->setAvatarUrl($request->request->get('avatarImageUrl'));
+            }
+        }
 
         $this->repo()->save($user);
 
@@ -188,7 +215,7 @@ class User extends BaseController
             $this->flash('success', $this->t('userUserSavedSuccess'));
 
             if($request->get('apply'))
-                return $this->redirect('User', 'User', 'edit', [ 'id' => $user->getId() ]);
+                return $this->redirect('User', 'User', $editActionName, [ 'id' => $user->getId() ]);
             else
                 return $this->redirect('User', 'User', 'index');
         }
@@ -275,10 +302,72 @@ class User extends BaseController
 
         $this->eventDispatcher()->dispatch('onUserDelete', [$user]);
 
+        $this->deleteAvatar($user);
         $this->repo()->delete($user);
 
         $this->flash('success', $this->t('userDeletedSuccess'));
 
         return $this->redirect('User', 'User', 'index');
+    }
+
+    protected function fillWithGeneratedAvatar(UserEntity $user)
+    {
+        $basedir  = BASEPATH.'/web/modules/User/avatar';
+        $filename = 'user-avatar-'.$user->getId().'-'.time().'.png';
+
+        if(is_dir($basedir) == false)
+        {
+            mkdir($basedir, 0777, true);
+        }
+
+        file_put_contents($basedir.'/'.$filename, (new Identicon())->getImageData($user->getId(), 256));
+
+        $this->deleteAvatar($user);
+        $user->setAvatarUrl('modules/User/avatar/'.$filename);
+
+        return $user;
+    }
+
+    protected function fillWithUploadedAvatarImage(UserEntity $user, $index)
+    {
+        if(isset($_FILES[$index]) && is_array($_FILES[$index]) && $_FILES[$index]['error'] != 4)
+        {
+            if(is_uploaded_file($_FILES[$index]['tmp_name']))
+            {
+                list($width, $height) = getimagesize($_FILES[$index]['tmp_name']);
+
+                if($width == 0 || $height == 0)
+                {
+                    $this->flash('warning', $this->t('userUploadedFileIsntImage'));
+                    return $user;
+                }
+                
+                if($width > 300 || $height > 300)
+                {
+                    $this->flash('warning', $this->t('userMaxImageSizesRestriction'));
+                    return $user;
+                }
+
+                $basedir  = BASEPATH.'/web/modules/User/avatar';
+                $filename = 'user-avatar-'.$user->getId().'-'.time().'.'.pathinfo($_FILES[$index]['name'], PATHINFO_EXTENSION);
+
+                move_uploaded_file($_FILES[$index]['tmp_name'], $basedir.'/'.$filename);
+
+                $this->deleteAvatar($user);
+                $user->setAvatarUrl('modules/User/avatar/'.$filename);
+            }
+        }
+
+        return $user;
+    }
+
+    protected function deleteAvatar(UserEntity $user)
+    {
+        $basedir = BASEPATH.'/web/';
+
+        if(is_file($basedir.$user->getAvatarUrl()))
+        {
+            unlink($basedir.$user->getAvatarUrl());
+        }
     }
 }

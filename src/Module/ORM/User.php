@@ -2,7 +2,7 @@
 /**
  * Verone CRM | http://www.veronecrm.com
  *
- * @copyright  Copyright (C) 2015 Adam Banaszkiewicz
+ * @copyright  Copyright (C) 2015 - 2016 Adam Banaszkiewicz
  * @license    GNU General Public License version 3; see license.txt
  */
 
@@ -21,6 +21,7 @@ class User extends Entity implements UserIdentityInterface
     protected $firstName;
     protected $lastName;
     protected $phone;
+    protected $avatarUrl;
     protected $active;
     protected $forcePasswordChange;
 
@@ -242,6 +243,30 @@ class User extends Entity implements UserIdentityInterface
     public function setPhone($phone)
     {
         $this->phone = $phone;
+
+        return $this;
+    }
+
+    /**
+     * Gets the value of avatarUrl.
+     *
+     * @return mixed
+     */
+    public function getAvatarUrl()
+    {
+        return $this->avatarUrl;
+    }
+
+    /**
+     * Sets the value of avatarUrl.
+     *
+     * @param mixed $avatarUrl the avatarUrl
+     *
+     * @return self
+     */
+    public function setAvatarUrl($avatarUrl)
+    {
+        $this->avatarUrl = $avatarUrl;
 
         return $this;
     }

@@ -36,7 +36,7 @@
 </div>
 
 <div class="container-fluid">
-    <form action="<?php echo $app->createUrl('User', 'User', 'updateSelf'); ?>" method="post" id="form" class="form-validation">
+    <form action="<?php echo $app->createUrl('User', 'User', 'updateSelf'); ?>" method="post" id="form" class="form-validation" enctype="multipart/form-data">
         <input type="hidden" name="id" value="{{ $user->getId() }}" />
         <div class="row">
             <div class="col-md-6">
@@ -72,7 +72,40 @@
                     <div class="panel-heading">{{ t('password') }}</div>
                     <div class="panel-body">
                         <div style="padding:40px 0 60px;text-align:center">
-                            <button type="button" class="btn btn-primary btn-change-password"data-toggle="modal" data-target="#password-chage-modal"><i class="fa fa-lock"></i> Zmiana hasła</button>
+                            <button type="button" class="btn btn-primary btn-change-password" data-toggle="modal" data-target="#password-chage-modal"><i class="fa fa-lock"></i> {{ t('userPasswordChange') }}</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">{{ t('userAvatar') }}</div>
+                    <div class="panel-body">
+                        <div class="user-avatar" style="background-image:url('{{ $user->getAvatarUrl() }}');margin:20px auto;width:64px;height:64px;padding:0;"></div>
+                        <div class="hidden" id="avatar-change-container">
+                            <div class="form-group">
+                                <label for="avatarSource" class="control-label">{{ t('userImageSource') }}</label>
+                                <select name="avatarSource" class="form-control">
+                                    <option value="1">{{ t('userGenerateByCRM') }}</option>
+                                    <option value="2">{{ t('userUploadImage') }}</option>
+                                    <option value="3">{{ t('userInsertImageURL') }}</option>
+                                </select>
+                            </div>
+                            <div class="form-group avatar-source-all hidden avatar-source-2">
+                                <label for="avatar-image" class="control-label">{{ t('userUploadImage') }}</label>
+                                <div class="input-group">
+                                    <span class="input-group-btn">
+                                        <label class="btn btn-primary btn-file">{{ t('selectFile') }}&hellip; <input type="file" name="avatarImage" id="avatar-image" accept="image/*" class="action-focus" /></label>
+                                    </span>
+                                    <input type="text" class="form-control" id="avatar-image-name" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group avatar-source-all hidden avatar-source-3">
+                                <label for="avatarImageUrl" class="control-label">{{ t('userInsertImageURL') }}</label>
+                                <input class="form-control action-focus" type="text" id="avatarImageUrl" name="avatarImageUrl" />
+                            </div>
+                        </div>
+                        <div style="padding:40px 0 0;text-align:center" id="avatar-change-btn">
+                            <input type="hidden" name="avatarChangeActive" value="0" />
+                            <button type="button" class="btn btn-primary"><i class="fa fa-image"></i> {{ t('userAvatarChange') }}</button>
                         </div>
                     </div>
                 </div>
@@ -86,7 +119,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="{{ t('close') }}"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title">Zmiana hasła</h4>
+                <h4 class="modal-title">{{ t('userPasswordChange') }}</h4>
             </div>
             <div class="modal-body">
                 @if $app->request()->query->get('forcePasswordChange')
@@ -133,3 +166,22 @@
     });
 </script>
 @endif
+<script>
+    $(function() {
+        $('#avatar-change-btn').click(function() {
+            $('#avatar-change-container').removeClass('hidden');
+            $(this).addClass('hidden');
+            $('input[name=avatarChangeActive]').val(1);
+        });
+
+        $('select[name=avatarSource]').change(function() {
+            $('.avatar-source-all').addClass('hidden');
+            $('.avatar-source-' + $(this).val()).removeClass('hidden').find('.action-focus').trigger('focus').trigger('click');
+        });
+
+        APP.FileInput.create({
+            inputTarget: '#avatar-image',
+            statusTarget: '#avatar-image-name'
+        });
+    });
+</script>
